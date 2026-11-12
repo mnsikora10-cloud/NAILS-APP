@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     'Keep the hand, fingers, skin, pose, background, lighting, framing and the nail shape and length from image 1 exactly unchanged. ' +
     'Do not add or remove fingers. Return only the edited image 1.';
   try {
-    const parts = await gemini(process.env.IMAGE_MODEL || 'gemini-2.5-flash-image', [{ text: prompt }, img(photo), img(ref)], { responseModalities: ['TEXT', 'IMAGE'] });
+    const parts = await gemini(process.env.IMAGE_MODEL || 'gemini-3.8-flash', [{ text: prompt }, img(photo), img(ref)], { responseModalities: ['TEXT', 'IMAGE'] });
     const out = parts.find((p) => p.inlineData || p.inline_data);
     if (!out) return res.status(502).json({ error: 'Model nie zwrócił obrazu. Spróbuj z innym zdjęciem.' });
     const o = out.inlineData || out.inline_data;
