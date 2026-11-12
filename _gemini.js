@@ -1,16 +1,27 @@
-// Wspólne funkcje: wywołanie Gemini, walidacja zdjęcia, prosty limit zapytań.
+// Wspólne funkcje: wywołanie Gemini (z ponawianiem przy przeciążeniu), walidacja zdjęcia, prosty limit zapytań.
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function gemini(model, parts, generationConfig) {
-  const r = await fetch(BASE + model + ':generateContent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
-    body: JSON.stringify({ contents: [{ parts }], generationConfig })
-  });
-  const j = await r.json();
-  if (!r.ok) throw new Error((j.error && j.error.message) || 'HTTP ' + r.status);
-  const c = j.candidates && j.candidates[0];
-  return (c && c.content && c.content.parts) || [];
+  const delays = [1500, 3000, 6000]; // ponowienia, gdy model jest przeciążony
+  let lastErr;
+  for (let i = 0; i <= delays.length; i++) {
+    const r = await fetch(BASE + model + ':generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+      body: JSON.stringify({ contents: [{ parts }], generationConfig })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) {
+      const c = j.candidates && j.candidates[0];
+      return (c && c.content && c.content.parts) || [];
+    }
+    lastErr = new Error((j.error && j.error.message) || 'HTTP ' + r.status);
+    const retryable = r.status === 429 || r.status === 500 || r.status === 503;
+    if (!retryable || i === delays.length) break;
+    await sleep(delays[i]);
+  }
+  throw lastErr;
 }
 
 const img = (b64) => ({ inline_data: { mime_type: 'image/jpeg', data: b64 } });
