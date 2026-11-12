@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
     'Odpowiedz WYŁĄCZNIE jako JSON: {"analiza":{"ksztalt":"","dlugosc":"","odcien_skory":"","obecny_stan":""},"wybrane":[{"id":0,"opis":""}]}. ' +
     'Jeśli na zdjęciu nie widać paznokci, odpowiedz: {"blad":"krótki komunikat po polsku"}.';
   try {
-    const parts = await gemini(process.env.TEXT_MODEL || 'gemini-2.5-flash', [{ text: prompt }, img(photo)], { responseMimeType: 'application/json' });
+    const parts = await gemini(process.env.TEXT_MODEL || 'gemini-3.8-flash', [{ text: prompt }, img(photo)], { responseMimeType: 'application/json' });
     const data = JSON.parse(parts.map((p) => p.text || '').join(''));
     if (data.blad) return res.status(200).json({ blad: data.blad });
     data.wybrane = (data.wybrane || []).filter((w) => designs.some((d) => d.id === w.id));
