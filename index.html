@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inspiracje do paznokci</title>
+<style>
+:root{--bg:#fbf5f2;--card:#fff;--tx:#3a2e2c;--mut:#8a7a76;--ac:#c4577a;--ac2:#f6dfe6;--bd:#ecdcd6}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1719;--card:#2a2124;--tx:#f3e8e6;--mut:#b2a19d;--ac:#e87fa2;--ac2:#3b2630;--bd:#3d3034}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Georgia,"Times New Roman",serif;line-height:1.5;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:760px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:30px;margin:0 0 6px}
+.sub{color:var(--mut);margin:0 0 20px;font-family:system-ui,sans-serif;font-size:15px}
+.drop{position:relative;display:block;border:2px dashed var(--bd);border-radius:18px;background:var(--card);padding:22px;text-align:center;cursor:pointer;font-family:system-ui,sans-serif}
+.drop input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.drop img{max-width:100%;max-height:300px;border-radius:12px;display:block;margin:0 auto 10px}
+.consent{display:flex;gap:8px;align-items:flex-start;margin-top:14px;font:13px system-ui,sans-serif;color:var(--mut)}
+button{font:600 16px system-ui,sans-serif;background:var(--ac);color:#fff;border:0;border-radius:999px;padding:13px 26px;margin-top:16px;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+#st{font-family:system-ui,sans-serif;color:var(--mut);margin-top:14px;min-height:22px;text-align:center}
+.an{background:var(--ac2);border-radius:16px;padding:16px 18px;margin-top:22px;font:15px system-ui,sans-serif}
+.an b{font:600 17px Georgia,serif;display:block;margin-bottom:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:16px;font-family:system-ui,sans-serif;cursor:pointer}
+.card.sel{outline:2px solid var(--ac)}
+.card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block}
+.card h3{font:600 17px Georgia,serif;margin:0 0 4px}
+.tags{color:var(--mut);font-size:12.5px;margin-bottom:8px}
+.card p{margin:0;font-size:14.5px}
+#try img{max-width:100%;border-radius:14px;display:block;margin:18px auto 6px}
+#try .sub{text-align:center;margin:8px 0 0}
+.note{margin-top:26px;color:var(--mut);font:13px system-ui,sans-serif}
+</style>
+</head>
+<body>
+<main>
+<h1>Inspiracje do paznokci</h1>
+<p class="sub">Wrzuć zdjęcie swoich paznokci, a dobierzemy wzory i pokażemy, jak będą wyglądać na Twojej dłoni.</p>
+<label class="drop" id="drop"><input type="file" id="f" accept="image/*"><div id="ph">Kliknij, aby wybrać zdjęcie dłoni lub paznokci</div></label>
+<label class="consent"><input type="checkbox" id="ok"><span>Zgadzam się na przetworzenie mojego zdjęcia przez narzędzie AI w celu przygotowania inspiracji. Zdjęcie nie jest zapisywane na naszym serwerze.</span></label>
+<div style="text-align:center"><button id="go" disabled>Pokaż inspiracje</button></div>
+<div id="st"></div>
+<div id="try"></div>
+<div id="out"></div>
+<p class="note">Wizualizacje są generowane przez AI i mają charakter poglądowy. Efekt u stylistki może się różnić.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let photo=null,DESIGNS=[];
+fetch('designs.json').then(r=>r.json()).then(d=>DESIGNS=d);
+
+async function toJpeg(f){
+  const bm=await createImageBitmap(f);
+  const sc=Math.min(1,1024/Math.max(bm.width,bm.height));
+  const c=document.createElement('canvas');c.width=Math.round(bm.width*sc);c.height=Math.round(bm.height*sc);
+  c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',0.88);
+}
+function refresh(){$('go').disabled=!(photo&&$('ok').checked);}
+$('ok').addEventListener('change',refresh);
+$('f').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  $('st').textContent='Wczytuję zdjęcie…';
+  try{photo=await toJpeg(f);}catch(err){photo=null;refresh();$('st').textContent='Nie udało się wczytać tego zdjęcia. Spróbuj pliku JPG lub PNG.';return;}
+  const im=document.createElement('img');im.src=photo;im.alt='Twoje zdjęcie';
+  $('ph').replaceChildren(im,'Kliknij, aby zmienić zdjęcie');
+  $('st').textContent='';$('out').replaceChildren();$('try').replaceChildren();refresh();
+});
+async function api(path,body){
+  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||'Coś poszło nie tak.');
+  return j;
+}
+function card(d,opis){
+  const el=document.createElement('div');el.className='card';el.onclick=()=>tryOn(d,el);
+  const im=document.createElement('img');im.src=d.img;im.alt=d.n;
+  const h=document.createElement('h3');h.textContent=d.n;
+  const tg=document.createElement('div');tg.className='tags';tg.textContent=d.t;
+  const p=document.createElement('p');p.textContent=opis;
+  el.append(im,h,tg,p);return el;
+}
+$('go').addEventListener('click',async()=>{
+  $('go').disabled=true;$('out').replaceChildren();$('try').replaceChildren();$('st').textContent='Analizuję zdjęcie…';
+  try{
+    const r=await api('/api/recommend',{image:photo});
+    if(r.blad){$('st').textContent=r.blad;return;}
+    const a=r.analiza||{};
+    const box=document.createElement('div');box.className='an';
+    const b=document.createElement('b');b.textContent='Co widzimy na zdjęciu';
+    box.append(b,'Kształt: '+a.ksztalt+' · Długość: '+a.dlugosc+' · Odcień skóry: '+a.odcien_skory+' · Obecnie: '+a.obecny_stan);
+    const hint=document.createElement('p');hint.className='sub';hint.style.marginTop='16px';hint.textContent='Kliknij wzór, aby zobaczyć go na swojej dłoni.';
+    const grid=document.createElement('div');grid.className='grid';
+    (r.wybrane||[]).forEach(w=>{const d=DESIGNS.find(x=>x.id===w.id);if(d)grid.appendChild(card(d,w.opis));});
+    $('out').append(box,hint,grid);$('st').textContent='';
+  }catch(e){$('st').textContent=e.message;}
+  finally{refresh();}
+});
+async function tryOn(d,el){
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');
+  const box=$('try');
+  const msg=t=>{const p=document.createElement('p');p.className='sub';p.textContent=t;return p;};
+  box.replaceChildren(msg('Nakładam wzór „'+d.n+'”… To potrwa kilkanaście sekund.'));
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  try{
+    const r=await api('/api/tryon',{image:photo,designId:d.id});
+    const im=document.createElement('img');im.src=r.image;im.alt='Wizualizacja: '+d.n;
+    box.replaceChildren(im,msg('Wzór „'+d.n+'” na Twojej dłoni (wizualizacja AI).'));
+  }catch(e){box.replaceChildren(msg(e.message));}
+}
+</script>
+</body>
+</html>

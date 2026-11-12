@@ -1,0 +1,29 @@
+[
+ {
+  "id": 1,
+  "n": "French z czarną koronką",
+  "img": "designs/1.jpg",
+  "t": "french, nude, czarne kwiaty, ręcznie malowane wzory, cyrkonie, elegancki",
+  "k": "migdał, długie",
+  "o": "ślub, wesele, ważna uroczystość",
+  "s": "cały rok"
+ },
+ {
+  "id": 2,
+  "n": "Alt glam: zebra, cętki i srebro",
+  "img": "designs/2.jpg",
+  "t": "zebra, cętki, bordowe pasy, srebrne łańcuszki, krzyżyki, kolce, wyrazisty, 3D",
+  "k": "kwadrat, średnie",
+  "o": "impreza, koncert, odważny look",
+  "s": "jesień, zima"
+ },
+ {
+  "id": 3,
+  "n": "Różowy nude z holo brokatem",
+  "img": "designs/3.jpg",
+  "t": "nude, różowy, holograficzny brokat, połysk, delikatny",
+  "k": "długie, baleriny, stiletto",
+  "o": "na co dzień, randka, urodziny",
+  "s": "cały rok"
+ }
+]
